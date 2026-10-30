@@ -1,0 +1,374 @@
+{
+  "info": {
+    "name": "SplitCart Product API",
+    "description": "Casos de uso del Product Service (Taller 3). Importa splitcart.products.json en la base splitcart, colección products, y levanta el servicio en http://localhost:8081.\n\nDataset: P01 Teclado Mecánico / perifericos / 199, P02 Mouse Gamer / perifericos / 99, P03 Monitor 27 / video / 899. La disponibilidad es lógica: 10 si el SKU existe y 0 si no existe.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081"
+    }
+  ],
+  "item": [
+    {
+      "name": "Consultar lista de productos",
+      "item": [
+        {
+          "name": "Listar sin filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products",
+            "description": "GET /api/products. page=0 y size=10 por defecto. Devuelve el catálogo completo del dataset."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const products = pm.response.json();",
+                  "",
+                  "pm.test('responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('devuelve los tres productos del dataset', function () {",
+                  "    pm.expect(products).to.be.an('array').with.lengthOf(3);",
+                  "    products.forEach(function (product) {",
+                  "        pm.expect(product).to.include.keys('id', 'sku', 'name', 'category', 'price');",
+                  "        pm.expect(product.sku).to.eql(product.id);",
+                  "    });",
+                  "    const ids = products.map(function (product) { return product.id; });",
+                  "    pm.expect(ids).to.have.members(['P01', 'P02', 'P03']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtrar por categoría",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products?category=perifericos",
+            "description": "GET /api/products?category=perifericos. Solo productos de esa categoría."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const products = pm.response.json();",
+                  "",
+                  "pm.test('responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('solo devuelve perifericos', function () {",
+                  "    pm.expect(products).to.be.an('array').that.is.not.empty;",
+                  "    products.forEach(function (product) {",
+                  "        pm.expect(product.category).to.eql('perifericos');",
+                  "    });",
+                  "    const ids = products.map(function (product) { return product.id; });",
+                  "    pm.expect(ids).to.have.members(['P01', 'P02']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtrar por precio máximo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products?maxPrice=100",
+            "description": "GET /api/products?maxPrice=100. Precio menor o igual a 100."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const products = pm.response.json();",
+                  "",
+                  "pm.test('responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('solo devuelve productos con precio menor o igual a 100', function () {",
+                  "    pm.expect(products).to.be.an('array').that.is.not.empty;",
+                  "    products.forEach(function (product) {",
+                  "        pm.expect(product.price).to.be.at.most(100);",
+                  "    });",
+                  "    const ids = products.map(function (product) { return product.id; });",
+                  "    pm.expect(ids).to.have.members(['P02']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtrar por categoría y precio máximo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products?category=video&maxPrice=1000",
+            "description": "GET /api/products?category=video&maxPrice=1000. Aplica ambos filtros."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const products = pm.response.json();",
+                  "",
+                  "pm.test('responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('devuelve el monitor dentro de categoría y precio', function () {",
+                  "    pm.expect(products).to.be.an('array').with.lengthOf(1);",
+                  "    pm.expect(products[0].id).to.eql('P03');",
+                  "    pm.expect(products[0].category).to.eql('video');",
+                  "    pm.expect(products[0].price).to.be.at.most(1000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Incluir el precio igual al máximo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products?maxPrice=199",
+            "description": "GET /api/products?maxPrice=199. El límite es inclusivo: P01 cuesta 199."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const products = pm.response.json();",
+                  "",
+                  "pm.test('responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('incluye el producto cuyo precio es igual al máximo', function () {",
+                  "    products.forEach(function (product) {",
+                  "        pm.expect(product.price).to.be.at.most(199);",
+                  "    });",
+                  "    const ids = products.map(function (product) { return product.id; });",
+                  "    pm.expect(ids).to.have.members(['P01', 'P02']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paginar primera página",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products?page=0&size=1",
+            "description": "GET /api/products?page=0&size=1. skip 0 y take 1."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const products = pm.response.json();",
+                  "",
+                  "pm.test('responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('devuelve una sola página de un producto', function () {",
+                  "    pm.expect(products).to.be.an('array').with.lengthOf(1);",
+                  "    pm.expect(products[0]).to.include.keys('id', 'sku', 'name', 'category', 'price');",
+                  "    pm.collectionVariables.set('firstPageId', products[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paginar segunda página",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products?page=1&size=1",
+            "description": "GET /api/products?page=1&size=1. skip 1 y take 1. Ejecutar después de la primera página."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const products = pm.response.json();",
+                  "",
+                  "pm.test('responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('devuelve el siguiente producto', function () {",
+                  "    pm.expect(products).to.be.an('array').with.lengthOf(1);",
+                  "    const firstPageId = pm.collectionVariables.get('firstPageId');",
+                  "    if (firstPageId) {",
+                  "        pm.expect(products[0].id).to.not.eql(firstPageId);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Consultar detalle por SKU",
+      "item": [
+        {
+          "name": "Obtener producto existente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products/P01",
+            "description": "GET /api/products/{id}. 200 cuando el _id coincide con el SKU."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const product = pm.response.json();",
+                  "",
+                  "pm.test('responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('devuelve el producto P01', function () {",
+                  "    pm.expect(product.id).to.eql('P01');",
+                  "    pm.expect(product.sku).to.eql('P01');",
+                  "    pm.expect(product.name).to.eql('Teclado Mecánico');",
+                  "    pm.expect(product.category).to.eql('perifericos');",
+                  "    pm.expect(product.price).to.eql(199);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SKU inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products/NOPE",
+            "description": "GET /api/products/{id}. 404 cuando el SKU no existe."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "    pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Consultar disponibilidad",
+      "item": [
+        {
+          "name": "SKUs existentes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products/availability?ids=P01,P02,P03",
+            "description": "GET /api/products/availability?ids=P01,P02,P03. Cada SKU existente tiene available = 10."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const items = pm.response.json();",
+                  "",
+                  "pm.test('responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('asigna stock lógico 10 y conserva el orden', function () {",
+                  "    pm.expect(items).to.eql([",
+                  "        { sku: 'P01', available: 10 },",
+                  "        { sku: 'P02', available: 10 },",
+                  "        { sku: 'P03', available: 10 }",
+                  "    ]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SKUs existentes e inexistentes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products/availability?ids=P01,P99,P02",
+            "description": "GET /api/products/availability?ids=P01,P99,P02. El SKU ausente tiene available = 0."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const items = pm.response.json();",
+                  "",
+                  "pm.test('responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('distingue existentes e inexistentes en el orden pedido', function () {",
+                  "    pm.expect(items).to.eql([",
+                  "        { sku: 'P01', available: 10 },",
+                  "        { sku: 'P99', available: 0 },",
+                  "        { sku: 'P02', available: 10 }",
+                  "    ]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
